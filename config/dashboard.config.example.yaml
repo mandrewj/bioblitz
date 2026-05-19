@@ -1,0 +1,35 @@
+# Biodiversity Dashboard — example configuration.
+# Copy to config/dashboard.config.yaml and adjust.
+
+contactEmail: you@example.com
+defaultBasemap: positron   # positron | voyager | dark
+
+views:
+  - slug: eagle-creek-beetles
+    displayName: "Eagle Creek Park — Beetles"
+    region:
+      name: "Eagle Creek Park"
+      source:
+        kind: geojson                # geojson | shapefile-zip
+        path: config/regions/eagle-creek.geojson
+        # path may also be an https:// URL.
+    taxon:
+      name: Coleoptera
+      inatTaxonId: 47208   # optional override
+      gbifTaxonKey: 1470   # optional override
+    dateRange:
+      start: 2000-01-01
+      end: ~               # ~ or null = no upper bound
+
+  # Add as many views as you like — each one gets its own page at /<slug>.
+  # - slug: my-second-view
+  #   displayName: "My Second View"
+  #   region:
+  #     name: "My Region"
+  #     source:
+  #       kind: shapefile-zip
+  #       path: config/regions/my-region.zip
+  #   taxon:
+  #     name: Lepidoptera
+  #   dateRange:
+  #     start: 2010-01-01

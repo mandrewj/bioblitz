@@ -1,0 +1,93 @@
+# Biodiversity Dashboard configuration.
+# Parsed at server startup and validated against the Zod schema in lib/config.ts.
+# A malformed file fails loudly with the offending field name.
+
+# Contact email sent in the User-Agent header to iNat and GBIF. Required.
+contactEmail: you@example.com
+
+# Default basemap. One of: positron | voyager | dark.
+# All three are free CARTO raster tile sets — no API key required.
+defaultBasemap: positron
+
+# Each view is a (region, taxon) pair exposed at /<slug>. Data is synced
+# locally with `npm run sync` and committed to data/<slug>.json.
+views:
+  - slug: eagle-creek-beetles
+    displayName: "Eagle Creek Park — Beetles"
+    description: >-
+      Eagle Creek Park held a bioblitz from May 16-17, 2026. The Insect
+      Diversity and Diagnostics Lab led the beetle team. Extensive
+      iNaturalist records are available for this large urban park which
+      complement the focused survey of beetles by our team.
+    region:
+      name: "Eagle Creek Park"
+      source:
+        kind: geojson
+        path: config/regions/eagle-creek.geojson
+    taxon:
+      name: Coleoptera
+      # Optional ID overrides. If omitted, the sync resolves them by name on
+      # first run (iNat /v1/taxa, GBIF /v1/species/match) and writes them
+      # into the taxa table.
+      inatTaxonId: 47208
+      gbifTaxonKey: 1470
+    dateRange:
+      start: 2000-01-01
+      end: ~   # null = no upper bound
+
+  - slug: harmonie-beetles
+    displayName: "Harmonie State Park — Beetles"
+    description: >-
+      The 2026 Indiana Academy of Sciences bioblitz took place here on
+      June 20, 2026. The Insect Diversity and Diagnostics Lab joined
+      the beetle team.
+    region:
+      name: "Harmonie State Park"
+      source:
+        kind: geojson
+        path: config/regions/harmonie.geojson
+    taxon:
+      name: Coleoptera
+      inatTaxonId: 47208
+      gbifTaxonKey: 1470
+    dateRange:
+      start: 2000-01-01
+      end: ~
+
+  - slug: harmonie-hymenoptera
+    displayName: "Harmonie State Park — Hymenoptera"
+    description: >-
+      The 2026 Indiana Academy of Sciences bioblitz took place here on
+      June 20, 2026. The IDDL supported the Entomology Education Lab in
+      surveying hymenopterans.
+    region:
+      name: "Harmonie State Park"
+      source:
+        kind: geojson
+        path: config/regions/harmonie.geojson
+    taxon:
+      name: Hymenoptera
+      # iNat + GBIF taxon IDs resolved automatically by the sync on first run.
+    dateRange:
+      start: 2000-01-01
+      end: ~
+
+  - slug: big-oaks-beetles
+    displayName: "Big Oaks NWR — Beetles"
+    description: >-
+      The Indiana Academy of Sciences held its 2024 annual bioblitz at
+      Big Oaks. The Insect Diversity and Diagnostics Lab was part of
+      the beetle team.
+    region:
+      name: "Big Oaks National Wildlife Refuge"
+      # Polygon extracted from iNaturalist place 119202 (Big Oaks NWR).
+      source:
+        kind: geojson
+        path: config/regions/big-oaks.geojson
+    taxon:
+      name: Coleoptera
+      inatTaxonId: 47208
+      gbifTaxonKey: 1470
+    dateRange:
+      start: 2000-01-01
+      end: ~

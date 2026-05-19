@@ -1,0 +1,60 @@
+{
+  "offset": 0,
+  "limit": 3,
+  "endOfRecords": true,
+  "count": 3,
+  "results": [
+    {
+      "gbifID": 4321,
+      "key": 4321,
+      "datasetKey": "50c9509d-22c7-4a22-a47d-8c48425ef4a7",
+      "scientificName": "Carabus nemoralis",
+      "acceptedScientificName": "Carabus nemoralis O.F. Müller, 1764",
+      "vernacularName": "European Ground Beetle",
+      "species": "Carabus nemoralis",
+      "decimalLatitude": 39.851,
+      "decimalLongitude": -86.302,
+      "eventDate": "2023-04-12T00:00:00",
+      "year": 2023,
+      "month": 4,
+      "recordedBy": "iNat User",
+      "license": "CC_BY_NC_4_0",
+      "basisOfRecord": "HUMAN_OBSERVATION",
+      "occurrenceID": "https://www.inaturalist.org/observations/9999",
+      "lastInterpreted": "2024-03-01T12:00:00.000+0000"
+    },
+    {
+      "gbifID": 4322,
+      "key": 4322,
+      "datasetKey": "0e747f1d-c0e2-4b88-9eb1-aaaaaaaaaaaa",
+      "scientificName": "Photuris pensylvanica",
+      "acceptedScientificName": "Photuris pensylvanica (De Geer, 1774)",
+      "vernacularName": "Pennsylvania Firefly",
+      "species": "Photuris pensylvanica",
+      "decimalLatitude": 39.857,
+      "decimalLongitude": -86.299,
+      "eventDate": "2022-08-09T00:00:00",
+      "year": 2022,
+      "month": 8,
+      "recordedBy": "Museum X",
+      "license": "CC0_1_0",
+      "basisOfRecord": "PRESERVED_SPECIMEN"
+    },
+    {
+      "gbifID": 4323,
+      "key": 4323,
+      "datasetKey": "0e747f1d-c0e2-4b88-9eb1-bbbbbbbbbbbb",
+      "scientificName": "Calosoma scrutator",
+      "acceptedScientificName": "Calosoma scrutator (Fabricius, 1775)",
+      "species": "Calosoma scrutator",
+      "decimalLatitude": null,
+      "decimalLongitude": null,
+      "eventDate": "2021-06-01T00:00:00",
+      "year": 2021,
+      "month": 6,
+      "recordedBy": "Anonymous",
+      "license": "CC_BY_4_0",
+      "basisOfRecord": "HUMAN_OBSERVATION"
+    }
+  ]
+}

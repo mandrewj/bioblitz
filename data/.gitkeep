@@ -1,0 +1,3 @@
+# Sync output lives here. The repo SHOULD commit data/<slug>.json files —
+# they are the deploy artifacts. This file just keeps the directory tracked
+# before the first sync.

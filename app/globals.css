@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+
+/*
+ * Palette and typography mirror the InsectID style guide (Lato + brand blue
+ * #116dff on white/light-gray surfaces). Names follow the INDD dashboard for
+ * cross-property consistency: "forest" = brand blue, "moss" = neutral gray,
+ * "bark" = body text scale, "cream" = white/light surfaces, "ochre" = cyan
+ * accent. The "ok" family is Okabe-Ito for colorblind-safe categorical charts.
+ */
+@theme {
+  --color-forest-50: #EEF4FF;
+  --color-forest-100: #D9E5FF;
+  --color-forest-200: #B3CBFF;
+  --color-forest-300: #7AA5FF;
+  --color-forest-400: #4783FA;
+  --color-forest-500: #2C7AFB;
+  --color-forest-600: #116dff;
+  --color-forest-700: #0A4FBE;
+  --color-forest-800: #0A3F95;
+  --color-forest-900: #0A2D6B;
+
+  --color-moss-100: #EEF1F2;
+  --color-moss-200: #D9DDDF;
+  --color-moss-300: #B7BDC0;
+  --color-moss-400: #8A9094;
+  --color-moss-500: #6F7478;
+  --color-moss-600: #5f6360;
+  --color-moss-700: #4A4F50;
+  --color-moss-800: #363A3B;
+
+  --color-bark-100: #F2F2F2;
+  --color-bark-200: #D5D5D5;
+  --color-bark-300: #A5A5A5;
+  --color-bark-400: #6D6F6E;
+  --color-bark-500: #404342;
+  --color-bark-600: #1F2222;
+  --color-bark-700: #080808;
+
+  --color-cream-50: #FFFFFF;
+  --color-cream-100: #F8F9FA;
+  --color-cream-200: #F1F3F5;
+  --color-cream-300: #E5E7EB;
+
+  --color-ochre-400: #3FB6D8;
+  --color-ochre-500: #1F95B8;
+  --color-ochre-600: #0E7693;
+
+  --color-ok-black: #000000;
+  --color-ok-orange: #E69F00;
+  --color-ok-skyblue: #56B4E9;
+  --color-ok-green: #009E73;
+  --color-ok-yellow: #F0E442;
+  --color-ok-blue: #0072B2;
+  --color-ok-vermillion: #D55E00;
+  --color-ok-purple: #CC79A7;
+
+  --font-sans: var(--font-lato), Lato, Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-leaf: 0 1px 0 rgba(15, 23, 42, 0.04), 0 4px 16px -8px rgba(15, 23, 42, 0.10);
+
+  --background-image-page: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+}
+
+:root {
+  color-scheme: light;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-bark-600);
+    background: var(--background-image-page);
+  }
+  h1, h2, h3 {
+    font-family: var(--font-sans);
+    letter-spacing: -0.005em;
+    color: var(--color-forest-800);
+  }
+  a {
+    color: var(--color-forest-600);
+  }
+}
+
+@layer components {
+  /* White card surface with hairline neutral border + soft shadow. */
+  .nature-card {
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-cream-300);
+    background-color: var(--color-cream-50);
+    box-shadow: var(--shadow-leaf);
+  }
+  .nature-card-accent {
+    position: relative;
+    overflow: hidden;
+  }
+  .nature-card-accent::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    background-color: var(--color-forest-600);
+  }
+
+  /* Short brand-blue underline beneath section headings. */
+  .leaf-rule {
+    position: relative;
+    padding-bottom: 0.5rem;
+  }
+  .leaf-rule::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: 2.5rem;
+    background-color: var(--color-forest-600);
+    border-radius: 9999px;
+  }
+
+  /* Small uppercase tag above a heading. */
+  .eyebrow {
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-moss-600);
+  }
+}
+
+/* Visible focus ring for keyboard navigation (brand blue). */
+:where(button, a, input, select, [role="button"]):focus-visible {
+  outline: 2px solid var(--color-forest-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin neutral divider (legacy class kept for compatibility). */
+.botanical-divider {
+  background-image: none;
+  background-color: var(--color-cream-300);
+  height: 1px;
+}
+
+/*
+ * Leaflet marker-cluster overrides: brand-blue circles with white count,
+ * three size buckets, slight transparency so overlaps still read.
+ * Default marker-cluster CSS already wraps the count text in a span.
+ */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: rgba(17, 109, 255, 0.18);
+}
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: rgba(17, 109, 255, 0.9);
+  color: #ffffff;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.marker-cluster span {
+  color: #ffffff;
+}
+.leaflet-tooltip {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-bark-600);
+  border: 1px solid var(--color-cream-300);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  border: 1px solid var(--color-cream-300);
+}
+.leaflet-popup-content {
+  margin: 10px 12px;
+  font-family: var(--font-sans);
+}
+

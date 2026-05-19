@@ -1,0 +1,54 @@
+{
+  "total_results": 2,
+  "page": 1,
+  "per_page": 2,
+  "results": [
+    {
+      "id": 1001,
+      "observed_on": "2024-06-15",
+      "observed_on_details": { "date": "2024-06-15", "year": 2024, "month": 6 },
+      "quality_grade": "research",
+      "license_code": "cc-by-nc",
+      "geojson": { "type": "Point", "coordinates": [-86.301, 39.855] },
+      "user": { "login": "naturalist_one", "name": "First Observer" },
+      "taxon": {
+        "id": 47208,
+        "name": "Carabidae",
+        "preferred_common_name": "Ground beetles",
+        "rank": "family"
+      },
+      "photos": [
+        {
+          "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1001/square.jpg",
+          "license_code": "cc-by-nc",
+          "attribution": "(c) naturalist_one, some rights reserved (CC BY-NC)"
+        }
+      ],
+      "uri": "https://www.inaturalist.org/observations/1001",
+      "updated_at": "2024-06-16T03:14:00+00:00"
+    },
+    {
+      "id": 1002,
+      "observed_on": "2024-07-04",
+      "observed_on_details": { "date": "2024-07-04", "year": 2024, "month": 7 },
+      "quality_grade": "needs_id",
+      "license_code": null,
+      "geojson": { "type": "Point", "coordinates": [-86.295, 39.86] },
+      "user": { "login": "another_user" },
+      "taxon": {
+        "id": 47208,
+        "name": "Coleoptera",
+        "rank": "order"
+      },
+      "photos": [
+        {
+          "url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1002/square.jpg",
+          "license_code": null,
+          "attribution": "all rights reserved"
+        }
+      ],
+      "uri": "https://www.inaturalist.org/observations/1002",
+      "updated_at": "2024-07-05T03:14:00+00:00"
+    }
+  ]
+}
