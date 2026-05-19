@@ -485,12 +485,15 @@ export function getDatasetsSummary(
 
 // ----- Species checklist (CSV export) -----
 
+export type ChecklistRank = "species" | "genus" | "family";
+
 export interface ChecklistRow {
   order: string | null;
   family: string | null;
   genus: string | null;
   scientificName: string;
   scientificNameAuthorship: string;
+  taxonRank: ChecklistRank;
   recordCount: number;
   inInaturalist: boolean;
   inGbif: boolean;
@@ -515,14 +518,39 @@ function splitNameAuthorship(stored: string): {
 }
 
 /**
- * Build a Darwin Core-flavored species checklist:
+ * Decide the lowest identification rank for an occurrence, given the
+ * cleaned name we extracted from `taxonScientificName`:
+ *   - ≥ 2 tokens                                          → "species"
+ *   - 1 token matching the stored `taxonGenus`            → "genus"
+ *   - 1 token matching the stored `taxonFamily`           → "family"
+ *   - otherwise (order-only or unmatched)                 → null (skip)
+ */
+function determineRank(
+  cleanName: string,
+  o: StoredOccurrence
+): ChecklistRank | null {
+  if (!cleanName) return null;
+  if (cleanName.split(/\s+/).length >= 2) return "species";
+  const lc = cleanName.toLowerCase();
+  if (o.taxonGenus && lc === o.taxonGenus.toLowerCase()) return "genus";
+  if (o.taxonFamily && lc === o.taxonFamily.toLowerCase()) return "family";
+  return null;
+}
+
+/**
+ * Build a Darwin Core-flavored checklist:
  *   order, family, genus, scientificName, scientificNameAuthorship,
- *   recordCount, inInaturalist, inGbif
+ *   taxonRank, recordCount, inInaturalist, inGbif
  *
- * Rows are grouped by the clean binomial (e.g. "Cicindela sexguttata"
- * from iNat and "Cicindela sexguttata (Fabricius, 1775)" from GBIF
- * collapse to one row); higher-rank fields and authorship are filled
- * from whichever occurrence has them. Sorted by family → genus → species.
+ * Each row represents records at the rank of their *lowest*
+ * identification. Species rows aggregate by binomial; genus rows
+ * aggregate records identified only to genus; family rows aggregate
+ * records identified only to family. A genus or family with both
+ * species-level and rank-only records produces a row for each — the
+ * rank-only row reflects the records that were never narrowed further.
+ *
+ * Sorted family → genus → species; higher-rank rows sort before
+ * species rows in the same group.
  */
 export function getSpeciesChecklist(
   slug: string,
@@ -532,31 +560,28 @@ export function getSpeciesChecklist(
   if (!view) return [];
   const occ = filteredOccurrences(view, researchOnly);
 
-  type Bucket = {
-    order: string | null;
-    family: string | null;
-    genus: string | null;
-    scientificName: string;
-    scientificNameAuthorship: string;
-    recordCount: number;
-    inInaturalist: boolean;
-    inGbif: boolean;
-  };
+  type Bucket = ChecklistRow;
   const buckets = new Map<string, Bucket>();
   for (const o of occ) {
     const { name, authorship } = splitNameAuthorship(o.taxonScientificName);
-    // Skip records identified above species (single word: family, genus,
-    // or order). A species checklist needs at least a binomial.
-    if (!name || name.split(/\s+/).length < 2) continue;
-    const key = name.toLowerCase();
+    const rank = determineRank(name, o);
+    if (!rank) continue;
+
+    // Bucket key is rank-prefixed so a genus "Tomoderus" doesn't collide
+    // with a species "Tomoderus virginicus" (case-folded for de-dup).
+    const key = `${rank}:${name.toLowerCase()}`;
     let b = buckets.get(key);
     if (!b) {
       b = {
         order: o.taxonOrder,
-        family: o.taxonFamily,
-        genus: o.taxonGenus,
+        // For family rows the family field is the row identity itself.
+        family: rank === "family" ? name : o.taxonFamily,
+        // For family rows there's no known genus; for genus rows it's the
+        // row's name; for species rows it's the stored genus.
+        genus: rank === "family" ? null : rank === "genus" ? name : o.taxonGenus,
         scientificName: name,
         scientificNameAuthorship: authorship,
+        taxonRank: rank,
         recordCount: 0,
         inInaturalist: false,
         inGbif: false,
@@ -569,12 +594,20 @@ export function getSpeciesChecklist(
     // Fill in any missing higher ranks / authorship from this occurrence.
     if (!b.order && o.taxonOrder) b.order = o.taxonOrder;
     if (!b.family && o.taxonFamily) b.family = o.taxonFamily;
-    if (!b.genus && o.taxonGenus) b.genus = o.taxonGenus;
+    if (b.taxonRank === "species" && !b.genus && o.taxonGenus) {
+      b.genus = o.taxonGenus;
+    }
     if (!b.scientificNameAuthorship && authorship) {
       b.scientificNameAuthorship = authorship;
     }
   }
 
+  // Sort: family → genus → rank (family<genus<species) → name.
+  const rankOrder: Record<ChecklistRank, number> = {
+    family: 0,
+    genus: 1,
+    species: 2,
+  };
   return Array.from(buckets.values()).sort((a, b) => {
     const af = (a.family ?? "￿").toLowerCase();
     const bf = (b.family ?? "￿").toLowerCase();
@@ -582,6 +615,9 @@ export function getSpeciesChecklist(
     const ag = (a.genus ?? "￿").toLowerCase();
     const bg = (b.genus ?? "￿").toLowerCase();
     if (ag !== bg) return ag < bg ? -1 : 1;
+    if (a.taxonRank !== b.taxonRank) {
+      return rankOrder[a.taxonRank] - rankOrder[b.taxonRank];
+    }
     return a.scientificName.toLowerCase() < b.scientificName.toLowerCase()
       ? -1
       : 1;
@@ -594,6 +630,7 @@ const CSV_COLUMNS: Array<keyof ChecklistRow> = [
   "genus",
   "scientificName",
   "scientificNameAuthorship",
+  "taxonRank",
   "recordCount",
   "inInaturalist",
   "inGbif",
