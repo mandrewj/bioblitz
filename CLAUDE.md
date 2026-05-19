@@ -5,8 +5,17 @@
 A Next.js 16 / App Router dashboard that visualizes iNaturalist + GBIF
 occurrence data for a configured polygon (AOI) and parent taxon. Built
 for the Insect Diversity and Diagnostics Lab (https://insectid.org).
-Default view: **Eagle Creek Park, Indianapolis × Coleoptera (beetles)** —
-1,149 records / 317 species as of the last sync.
+
+**Live**: https://bioblitz-dashboard.vercel.app/
+**GitHub**: https://github.com/mandrewj/bioblitz
+
+**Views shipped** (in `config/dashboard.config.yaml`):
+- `eagle-creek-beetles` — Eagle Creek Park × Coleoptera, ~1,149 records / 317 species (all iNat)
+- `harmonie-beetles` — Harmonie State Park × Coleoptera
+- `harmonie-hymenoptera` — Harmonie State Park × Hymenoptera
+- `big-oaks-beetles` — Big Oaks NWR × Coleoptera, ~657 records (30 iNat + 627 GBIF museum records from IDDL's own dataset)
+
+See `docs/adding-views.md` for the workflow to add another.
 
 ## Storage architecture (read before changing data flow)
 
@@ -20,10 +29,17 @@ There is **no Vercel Cron**, **no Vercel Blob**, **no Postgres**, **no
 CRON_SECRET**, **no admin/resync route**. The earlier Postgres/PostGIS
 scaffold was removed on 2026-05-18.
 
-Schema is currently **v2** (bumped 2026-05-19 to add
-`taxonOrder/Family/Genus` to each occurrence, plus `inatTaxonAncestry`
-cache and `datasetTitles` map on the stored view). `loadView` throws on
-older versions with a hint to run `npm run sync -- <slug> --full`.
+Schema is currently **v3**. Bump history:
+- v1: initial.
+- v2 (2026-05-19): added `taxonOrder/Family/Genus` to each occurrence,
+  plus `inatTaxonAncestry` and `datasetTitles` to the stored view.
+- v3 (2026-05-19): added `taxonPhotos: Record<name, url|null>` to the
+  stored view for fallback thumbnails on GBIF-only species (looked up
+  via iNat `/taxa?q=<binomial>` at sync time).
+
+`loadView` throws on older versions with a hint to run `npm run sync --
+<slug> --full`. `--full` also skips loading the prior so the version
+check doesn't block a schema-bump re-sync.
 
 If data volume ever outgrows ~10 MB per view, revisit the choice. See
 `memory/project_storage_decision.md`.
@@ -32,7 +48,7 @@ If data volume ever outgrows ~10 MB per view, revisit the choice. See
 
 | Path | What it does |
 |---|---|
-| `config/dashboard.config.yaml` | View definitions (region + taxon pairs). Zod-validated at load — bad config dies loud. |
+| `config/dashboard.config.yaml` | View definitions (region + taxon pairs, optional `description:` block scalar). Zod-validated at load — bad config dies loud. |
 | `config/regions/eagle-creek.geojson` | Real iNat MultiPolygon for Eagle Creek Park (fetched once from `/v1/places/120856`). |
 | `data/<slug>.json` | The sync output. Committed to git, ~640 KB for the default view. Schema v2 — see `lib/store.ts`. |
 | `lib/config.ts` | YAML loader + Zod schema. Singleton; `resetConfigCache()` for tests. |
@@ -48,7 +64,8 @@ If data volume ever outgrows ~10 MB per view, revisit the choice. See
 | `components/species-panel.tsx` | Sticky right sidebar with paginated list + a `<Drawer>` rendered via portal (z-[1000]) for the species detail view. |
 | `components/{accumulation-chart,taxonomy-card,contributors-card,datasets-card,phenology-chart}.tsx` | One card per data view. |
 | `components/ui/primitives.tsx` | `Card`, `Button`, `Toggle`, `Select`, `Drawer` (portaled to `document.body`). |
-| `app/api/views/[slug]/{summary,species,occurrences,accumulation,contributors,taxonomy,datasets}/route.ts` | Thin readers — call `lib/queries.ts`. |
+| `app/api/views/[slug]/{summary,species,occurrences,accumulation,contributors,taxonomy,datasets}/route.ts` | Thin JSON readers — call `lib/queries.ts`. |
+| `app/api/views/[slug]/checklist.csv/route.ts` | Darwin Core species checklist CSV. Columns: `order,family,genus,scientificName,scientificNameAuthorship,taxonRank,recordCount,inInaturalist,inGbif`. Includes species + genus-only + family-only rows. Linked from the species panel's "↓ CSV" chip. |
 | `scripts/sync.ts` | CLI entry. `npm run sync [slug] [--full]`. |
 | `next.config.ts` | `outputFileTracingIncludes` ships `data/` + `config/` into server functions. `headers()` sets the CSP `frame-ancestors` allow-list for iframe embedding. |
 
@@ -134,14 +151,23 @@ Three files in `tests/`:
 
 The dashboard is meant to be iframed into other lab properties. The
 allow-list lives in `next.config.ts` as `EMBED_ALLOWED_ORIGINS`; it
-sets the CSP `frame-ancestors` header. Default: `insectid.org`,
-`indianabugs.com`, both with subdomains, plus `localhost` for dev. Edit
-the list and redeploy to add origins.
+sets the CSP `frame-ancestors` header. Current allow-list:
+`'self'`, `https://insectid.org` + subdomains,
+`https://indianabugs.com` + subdomains, `https://*.vercel.app`,
+`http://localhost:*`. Edit and redeploy to add origins.
+
+Sample embed (from any allow-listed page):
+
+```html
+<iframe src="https://bioblitz-dashboard.vercel.app/eagle-creek-beetles"
+        width="100%" height="900" style="border:0" loading="lazy"></iframe>
+```
 
 ## What's NOT built (intentional, per spec)
 
 - User accounts / auth
 - Editing config from the UI (it's committed YAML — redeploy to change)
 - Conservation status enrichment, beta diversity
-- CSV export
 - Vercel Cron (replaced by local cron → git push)
+- Time-window filters (e.g., "show only 2024 records")
+- Filtering map / cards by selected contributor or dataset

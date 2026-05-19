@@ -5,7 +5,12 @@ A customizable, deploy-on-Vercel dashboard that visualizes
 occurrence data for a configured Area of Interest (AOI) polygon and parent
 taxon. Built for the
 [Insect Diversity and Diagnostics Lab](https://insectid.org).
-Default view: **Eagle Creek Park, Indianapolis × Coleoptera (beetles)**.
+
+**Live**: https://bioblitz-dashboard.vercel.app/
+
+**Current views**: Eagle Creek Park × Coleoptera (default),
+Harmonie State Park × Coleoptera, Harmonie State Park × Hymenoptera,
+Big Oaks NWR × Coleoptera.
 
 ## Stack
 
@@ -52,6 +57,13 @@ Default view: **Eagle Creek Park, Indianapolis × Coleoptera (beetles)**.
   time from `gbif.org/v1/dataset/<key>`).
 - **iNaturalist vs GBIF** source comparison card with the iNat→GBIF
   dedup tally.
+- **Per-view description** card (optional `description:` field in the
+  YAML — folded block scalars are fine for multi-line prose).
+- **Darwin Core CSV checklist** download at
+  `/api/views/<slug>/checklist.csv` — columns are `order, family,
+  genus, scientificName, scientificNameAuthorship, taxonRank,
+  recordCount, inInaturalist, inGbif`. Includes species, genus-only,
+  and family-only rows. Linked from the species panel header.
 - **Research-grade toggle** persisted in the URL.
 - **InsectID branding**: logo in the title card, Lato typography, brand
   blue / cream / Okabe-Ito palette, footer attribution to the lab.
@@ -76,7 +88,8 @@ npm run dev
 
 For the default view, the first sync takes ~15–30 s and writes a ~640 KB
 JSON file with ~1.1k records, ~317 species, 229 cached iNat ancestry
-entries. Schema is currently `v2`.
+entries. Schema is currently `v3` (adds `taxonPhotos` for fallback
+species thumbnails).
 
 ## Configuration
 
@@ -165,12 +178,12 @@ Optional env vars (set via `vercel env add`):
 ## Embedding in another site
 
 The dashboard is configured to allow iframe embedding from a fixed
-allow-list (currently `insectid.org`, `indianabugs.com`, and any
-subdomain of either, plus `localhost` for dev). Embed it with:
+allow-list (currently `insectid.org` + subdomains, `indianabugs.com` +
+subdomains, `*.vercel.app`, and `localhost` for dev). Embed it with:
 
 ```html
 <iframe
-  src="https://your-bioblitz.vercel.app/eagle-creek-beetles"
+  src="https://bioblitz-dashboard.vercel.app/eagle-creek-beetles"
   width="100%"
   height="900"
   style="border:0"
@@ -203,6 +216,7 @@ app/                      Next.js App Router pages + API routes
   /[viewSlug]/page.tsx    Dashboard for a single view
   /api/views/[slug]/…     Read endpoints (summary, species, occurrences,
                           accumulation, contributors, taxonomy, datasets)
+                          + checklist.csv (Darwin Core CSV export)
 components/               Map, sidebar, charts, cards, primitives
   dashboard.tsx           Orchestrator (TanStack Query, layout)
   map-view.tsx            Leaflet map + cluster + popups
@@ -229,6 +243,7 @@ lib/
   queries.ts              In-memory filters/aggregations over the JSON store
   basemap.ts              CARTO raster tile URLs
 docs/features/            Design docs (all `shipped`)
+docs/adding-views.md      Step-by-step how-to for new (region, taxon) views
 scripts/
   sync.ts                 CLI entry: `npm run sync [slug] [--full]`
 tests/                    inext, clients (fixture-based), config
@@ -252,4 +267,5 @@ next.config.ts            outputFileTracingIncludes + CSP headers
 
 User accounts / auth, editing config from the UI (it's committed YAML —
 redeploy to change), conservation status enrichment, beta diversity,
-CSV export.
+time-window filtering, filtering the dashboard by selected contributor
+or dataset.
