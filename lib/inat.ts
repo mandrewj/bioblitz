@@ -210,23 +210,25 @@ const taxonAncestrySchema = z.object({
  * extras like `J.Lec., 1876`.
  */
 export function cleanScientificName(name: string): string {
-  // Strip authorship paren first.
-  const noParen = name.replace(/\s*\(.*$/, "");
-  // Common GBIF pattern: "Genus species J.Lec., 1876" — take just the first
-  // two whitespace-separated tokens (binomial), or three (trinomial) if
-  // tokens look like Latin names (start lowercase or known modifier).
+  // Strip authorship in parens first (e.g., " (Newman, 1838)").
+  const noParen = name.replace(/\s*\(.*$/, "").trim();
   const parts = noParen.split(/\s+/).filter(Boolean);
-  // Keep the first 2–3 tokens but stop at the first token that looks like
-  // an author surname or year (capital initial after a lowercase, or digits).
-  const out: string[] = [];
-  for (let i = 0; i < parts.length && out.length < 3; i++) {
+  if (parts.length === 0) return "";
+  // First token is the genus (or higher rank if that's all we have).
+  const out = [parts[0]];
+  // Walk subsequent tokens. Latin species/subspecies epithets are
+  // lowercase; author surnames are capitalized and typically contain
+  // a comma or precede a year. Stop at the first uppercase, digit, or
+  // comma-bearing token, and never take more than three tokens
+  // (Genus species subspecies).
+  for (let i = 1; i < parts.length && out.length < 3; i++) {
     const p = parts[i];
-    if (/^\d/.test(p)) break;
-    // Author surnames usually start uppercase and follow the species epithet.
-    if (i >= 2 && /^[A-Z]/.test(p)) break;
+    if (/^[0-9]/.test(p)) break;
+    if (/,/.test(p)) break;
+    if (/^[A-Z]/.test(p)) break;
     out.push(p);
   }
-  return out.join(" ").trim();
+  return out.join(" ");
 }
 
 const taxonPhotoSchema = z.object({

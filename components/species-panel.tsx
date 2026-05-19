@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardBody, Button, Drawer } from "@/components/ui/primitives";
 import { PhenologyChart } from "@/components/phenology-chart";
@@ -36,7 +37,18 @@ export function SpeciesPanel({ slug, researchOnly }: SpeciesPanelProps) {
     <>
       <Card className="flex h-full flex-col overflow-hidden">
         <CardHeader className="flex flex-shrink-0 items-center justify-between">
-          <CardTitle>Species</CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle>Species</CardTitle>
+            <a
+              href={`/api/views/${slug}/checklist.csv?rg=${researchOnly ? 1 : 0}`}
+              download
+              title="Download Darwin Core checklist (CSV)"
+              className="inline-flex items-center gap-1 rounded-md border border-cream-300 bg-cream-50 px-2 py-1 text-[11px] font-medium text-forest-800 hover:bg-cream-100"
+            >
+              <Download className="h-3 w-3" aria-hidden />
+              CSV
+            </a>
+          </div>
           <div className="flex items-center gap-2 text-xs text-moss-600">
             <Button
               size="sm"

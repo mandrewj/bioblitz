@@ -1,4 +1,5 @@
 import { loadView, type StoredOccurrence, type StoredView } from "@/lib/store";
+import { cleanScientificName } from "@/lib/inat";
 
 export interface ViewSummary {
   slug: string;
@@ -480,4 +481,138 @@ export function getDatasetsSummary(
     pct: tailRows.reduce((s, r) => s + r.pct, 0),
   };
   return { top, tail, total: occ.length, all: allRows };
+}
+
+// ----- Species checklist (CSV export) -----
+
+export interface ChecklistRow {
+  order: string | null;
+  family: string | null;
+  genus: string | null;
+  scientificName: string;
+  scientificNameAuthorship: string;
+  recordCount: number;
+  inInaturalist: boolean;
+  inGbif: boolean;
+}
+
+/**
+ * Split a stored `taxonScientificName` into (clean binomial, authorship).
+ * iNat names usually have no authorship; GBIF often does
+ * (e.g., "Abacidus atratus (Newman, 1838)" or "Acoptus suturalis
+ * J.Lec., 1876"). We keep both parts so the checklist has Darwin Core
+ * `scientificName` and `scientificNameAuthorship` separately.
+ */
+function splitNameAuthorship(stored: string): {
+  name: string;
+  authorship: string;
+} {
+  const name = cleanScientificName(stored);
+  const authorship = name.length < stored.length
+    ? stored.slice(name.length).trim()
+    : "";
+  return { name, authorship };
+}
+
+/**
+ * Build a Darwin Core-flavored species checklist:
+ *   order, family, genus, scientificName, scientificNameAuthorship,
+ *   recordCount, inInaturalist, inGbif
+ *
+ * Rows are grouped by the clean binomial (e.g. "Cicindela sexguttata"
+ * from iNat and "Cicindela sexguttata (Fabricius, 1775)" from GBIF
+ * collapse to one row); higher-rank fields and authorship are filled
+ * from whichever occurrence has them. Sorted by family → genus → species.
+ */
+export function getSpeciesChecklist(
+  slug: string,
+  researchOnly: boolean
+): ChecklistRow[] {
+  const view = loadView(slug);
+  if (!view) return [];
+  const occ = filteredOccurrences(view, researchOnly);
+
+  type Bucket = {
+    order: string | null;
+    family: string | null;
+    genus: string | null;
+    scientificName: string;
+    scientificNameAuthorship: string;
+    recordCount: number;
+    inInaturalist: boolean;
+    inGbif: boolean;
+  };
+  const buckets = new Map<string, Bucket>();
+  for (const o of occ) {
+    const { name, authorship } = splitNameAuthorship(o.taxonScientificName);
+    // Skip records identified above species (single word: family, genus,
+    // or order). A species checklist needs at least a binomial.
+    if (!name || name.split(/\s+/).length < 2) continue;
+    const key = name.toLowerCase();
+    let b = buckets.get(key);
+    if (!b) {
+      b = {
+        order: o.taxonOrder,
+        family: o.taxonFamily,
+        genus: o.taxonGenus,
+        scientificName: name,
+        scientificNameAuthorship: authorship,
+        recordCount: 0,
+        inInaturalist: false,
+        inGbif: false,
+      };
+      buckets.set(key, b);
+    }
+    b.recordCount++;
+    if (o.source === "inat") b.inInaturalist = true;
+    else b.inGbif = true;
+    // Fill in any missing higher ranks / authorship from this occurrence.
+    if (!b.order && o.taxonOrder) b.order = o.taxonOrder;
+    if (!b.family && o.taxonFamily) b.family = o.taxonFamily;
+    if (!b.genus && o.taxonGenus) b.genus = o.taxonGenus;
+    if (!b.scientificNameAuthorship && authorship) {
+      b.scientificNameAuthorship = authorship;
+    }
+  }
+
+  return Array.from(buckets.values()).sort((a, b) => {
+    const af = (a.family ?? "￿").toLowerCase();
+    const bf = (b.family ?? "￿").toLowerCase();
+    if (af !== bf) return af < bf ? -1 : 1;
+    const ag = (a.genus ?? "￿").toLowerCase();
+    const bg = (b.genus ?? "￿").toLowerCase();
+    if (ag !== bg) return ag < bg ? -1 : 1;
+    return a.scientificName.toLowerCase() < b.scientificName.toLowerCase()
+      ? -1
+      : 1;
+  });
+}
+
+const CSV_COLUMNS: Array<keyof ChecklistRow> = [
+  "order",
+  "family",
+  "genus",
+  "scientificName",
+  "scientificNameAuthorship",
+  "recordCount",
+  "inInaturalist",
+  "inGbif",
+];
+
+function csvCell(value: string | number | boolean | null): string {
+  if (value === null || value === undefined) return "";
+  const s = typeof value === "boolean" ? (value ? "true" : "false") : String(value);
+  // RFC 4180-ish: quote if it contains comma, quote, CR, or LF; double up
+  // embedded quotes.
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+export function checklistToCsv(rows: ChecklistRow[]): string {
+  const lines = [CSV_COLUMNS.join(",")];
+  for (const r of rows) {
+    lines.push(CSV_COLUMNS.map((k) => csvCell(r[k])).join(","));
+  }
+  // CRLF line endings — friendlier to Excel.
+  return lines.join("\r\n") + "\r\n";
 }
