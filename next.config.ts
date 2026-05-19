@@ -24,6 +24,11 @@ const EMBED_ALLOWED_ORIGINS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Hide the floating Next.js dev indicator (the small N badge in the
+  // bottom-left corner during `npm run dev`). It never shows in
+  // production, but the dashboard reads cleaner without it locally too.
+  devIndicators: false,
+
   // Bundle the data/ and config/ directories into server functions so the
   // API routes can read them on Vercel.
   outputFileTracingIncludes: {

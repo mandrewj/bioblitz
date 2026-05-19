@@ -445,15 +445,15 @@ export function getDatasetsSummary(
     records: inatRecords,
     pct: inatRecords / total,
   };
-  const gbifRows: DatasetRow[] = Array.from(gbifByKey.entries())
-    .map(([key, records]) => ({
+  const gbifRows: DatasetRow[] = Array.from(gbifByKey.entries()).map(
+    ([key, records]) => ({
       key,
       source: "gbif" as const,
       title: titles[key] ?? `GBIF dataset ${key.slice(0, 8)}`,
       records,
       pct: records / total,
-    }))
-    .sort((a, b) => b.records - a.records);
+    })
+  );
   if (gbifUnknown > 0) {
     gbifRows.push({
       key: null,
@@ -464,14 +464,20 @@ export function getDatasetsSummary(
     });
   }
 
-  // iNat row pinned to index 0; topN-1 GBIF datasets after it.
-  const top: DatasetRow[] = [inatRow, ...gbifRows.slice(0, Math.max(0, topN - 1))];
-  const tailRows = gbifRows.slice(Math.max(0, topN - 1));
+  // All rows ranked strictly by record count — including the iNat
+  // aggregate. Previously iNat was pinned to index 0, which buried larger
+  // GBIF datasets (e.g., a curated museum collection bigger than the iNat
+  // contribution at the same site).
+  const allRows: DatasetRow[] = [inatRow, ...gbifRows].sort(
+    (a, b) => b.records - a.records
+  );
+
+  const top: DatasetRow[] = allRows.slice(0, topN);
+  const tailRows = allRows.slice(topN);
   const tail = {
     count: tailRows.length,
     records: tailRows.reduce((s, r) => s + r.records, 0),
     pct: tailRows.reduce((s, r) => s + r.pct, 0),
   };
-  const all: DatasetRow[] = [inatRow, ...gbifRows];
-  return { top, tail, total: occ.length, all };
+  return { top, tail, total: occ.length, all: allRows };
 }
