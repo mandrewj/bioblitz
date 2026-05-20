@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code session metadata (local only)
 .claude/
+
+# weekly sync log (local cron output)
+/logs/

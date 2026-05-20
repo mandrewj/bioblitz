@@ -28,12 +28,13 @@ export default function Home() {
         </a>
         <div className="min-w-0">
           <h1 className="leaf-rule text-3xl font-bold tracking-tight text-forest-800 sm:text-4xl">
-            Biodiversity Dashboard
+            Bioblitz Dashboards
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-bark-600">
-            Insect occurrence records aggregated from iNaturalist and GBIF
-            for places of interest in Indiana. Pick a project below to
-            explore species, geography, and trends.
+            Bioblitz projects the Insect Diversity and Diagnostics Lab has
+            taken part in, with occurrence records aggregated from iNaturalist
+            and GBIF. Pick a project below to explore species, geography, and
+            trends.
           </p>
         </div>
       </div>

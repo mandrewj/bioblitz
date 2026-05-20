@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lato } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { QueryProvider } from "@/components/query-provider";
 
@@ -13,8 +14,8 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: "Biodiversity Dashboard",
-  description: "iNaturalist + GBIF occurrence dashboard for a configured AOI and taxon.",
+  title: "Bioblitz Dashboards",
+  description: "iNaturalist + GBIF occurrence dashboards for Bioblitz projects of the Insect Diversity and Diagnostics Lab.",
 };
 
 export default function RootLayout({
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="en" className={`${lato.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans text-bark-600">
         <QueryProvider>{children}</QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
