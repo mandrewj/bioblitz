@@ -107,6 +107,9 @@ descendants and let the map render through them. Keep the portal.
   Incremental via `lastInterpreted`.
 - **GBIF eventDate** must be `start,end`, `start,*`, or `*,end`. A bare
   `start,` (trailing comma, no upper) is a 400.
+- **GBIF `lastInterpreted`** only accepts `YYYY-MM-DD`, *not* full ISO
+  timestamps. Passing `2026-05-19T15:04:58.036Z` returns 400. `lib/gbif.ts`
+  slices the incoming cursor to the first 10 chars before sending.
 - **iNat dataset on GBIF** is `50c9509d-22c7-4a22-a47d-8c48425ef4a7`.
   Stored as `INAT_GBIF_DATASET_KEY`. Don't hardcode it elsewhere.
 - **iNat photos**: only show photos with `license_code !== null`. The

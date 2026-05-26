@@ -145,7 +145,9 @@ export async function* iterateGbifOccurrences(
       url.searchParams.set("eventDate", `*,${dateEnd}`);
     }
     if (lastInterpreted) {
-      url.searchParams.set("lastInterpreted", `${lastInterpreted},*`);
+      // GBIF's lastInterpreted parameter accepts YYYY-MM-DD, not full ISO
+      // timestamps — a millisecond-precision string returns 400.
+      url.searchParams.set("lastInterpreted", `${lastInterpreted.slice(0, 10)},*`);
     }
     const data = await gbifFetch(url.toString(), contactEmail);
     const parsed = gbifResponseSchema.parse(data);

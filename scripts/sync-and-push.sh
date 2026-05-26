@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Weekly sync: refresh all dashboard views, commit any data/ changes, push to
-# origin/main so Vercel redeploys. Designed to be invoked by cron.
+# origin/main so Vercel redeploys. Invoked by a launchd LaunchAgent.
 #
-# Cron's default PATH is /usr/bin:/bin, which doesn't include /usr/local/bin
-# where Homebrew node/npm live — so we set PATH explicitly.
+# launchd's default PATH is /usr/bin:/bin, which doesn't include /usr/local/bin
+# where node/npm live — so we set PATH explicitly.
 #
-# Install (Monday 5am local time):
-#   crontab -e
-#   0 5 * * 1 /Users/andrew/Documents/Research/AI_workflows/Bioblitz/scripts/sync-and-push.sh
+# Install (Monday 5am local time, catches up missed runs after sleep):
+#   ~/Library/LaunchAgents/com.mandrewj.bioblitz-sync.plist
+#   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.mandrewj.bioblitz-sync.plist
+#
+# We use launchd rather than cron because cron silently skips runs scheduled
+# while the Mac is asleep — launchd fires them on wake instead.
 
 set -euo pipefail
 
