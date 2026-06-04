@@ -2,9 +2,9 @@ name: Weekly data sync
 
 on:
   schedule:
-    # Mondays 09:00 UTC ≈ 5am EDT / 4am EST.
+    # Mondays + Thursdays 09:00 UTC ≈ 5am EDT / 4am EST.
     # GitHub may delay scheduled runs under load; manual dispatch always works.
-    - cron: "0 9 * * 1"
+    - cron: "0 9 * * 1,4"
   workflow_dispatch:
 
 permissions:
