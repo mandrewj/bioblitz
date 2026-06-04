@@ -20,10 +20,14 @@ See `docs/adding-views.md` for the workflow to add another.
 ## Storage architecture (read before changing data flow)
 
 **No database.** Data lives in `data/<slug>.json`, committed to git. The
-sync script (`npm run sync`) runs **locally** (or via a local cron) and
-writes JSON files. The user pushes the result to deploy. Vercel functions
-read the JSON at request time via `outputFileTracingIncludes` in
-`next.config.ts`.
+sync script (`npm run sync`) runs weekly via the GitHub Actions workflow
+at `.github/workflows/sync.yml` (Mondays 09:00 UTC, plus manual
+`workflow_dispatch`). It writes JSON files, commits any diff to `data/`,
+and pushes back to `main` — which redeploys Vercel. Functions read the
+JSON at request time via `outputFileTracingIncludes` in `next.config.ts`.
+
+For ad-hoc local syncs, `scripts/sync-and-push.sh` does the same thing
+from your machine.
 
 There is **no Vercel Cron**, **no Vercel Blob**, **no Postgres**, **no
 CRON_SECRET**, **no admin/resync route**. The earlier Postgres/PostGIS
@@ -171,6 +175,6 @@ Sample embed (from any allow-listed page):
 - User accounts / auth
 - Editing config from the UI (it's committed YAML — redeploy to change)
 - Conservation status enrichment, beta diversity
-- Vercel Cron (replaced by local cron → git push)
+- Vercel Cron (replaced by GitHub Actions weekly sync → git push)
 - Time-window filters (e.g., "show only 2024 records")
 - Filtering map / cards by selected contributor or dataset
