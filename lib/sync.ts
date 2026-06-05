@@ -316,12 +316,19 @@ export async function syncView(slug: string, opts: SyncOptions = {}): Promise<Sy
       geometry: feature,
     },
     lastSyncedAt: new Date().toISOString(),
+    // Per-run metrics — NOT cumulative. Accumulating `prior + thisRun` made
+    // these grow unboundedly: incremental syncs re-fetch records (e.g. big-oaks
+    // re-pulls its whole IDDL dataset every run because GBIF keeps re-interpreting
+    // it), so the counters churned on every sync — forcing a commit + Vercel
+    // redeploy even when the stored occurrences were identical. Keeping them
+    // per-run makes stats stable across no-op syncs and gives the UI's
+    // gbifDroppedAsInat the true count for the latest run.
     stats: {
-      inatFetched: (prior?.stats.inatFetched ?? 0) + inatFetched,
+      inatFetched,
       inatKept,
-      gbifFetched: (prior?.stats.gbifFetched ?? 0) + gbifFetched,
+      gbifFetched,
       gbifKept,
-      gbifDroppedAsInat: (prior?.stats.gbifDroppedAsInat ?? 0) + gbifDroppedAsInat,
+      gbifDroppedAsInat,
       outsidePolygon,
     },
     inatTaxonAncestry,
