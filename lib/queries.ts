@@ -50,6 +50,18 @@ function filteredOccurrences(view: StoredView, researchOnly: boolean): StoredOcc
   return researchOnly ? view.occurrences.filter((o) => passRG(o, true)) : view.occurrences;
 }
 
+/**
+ * Canonical species identity for grouping/counting. iNat stores the bare
+ * binomial ("Harmonia axyridis") while GBIF carries authorship
+ * ("Harmonia axyridis (Pallas, 1773)") — keying on the raw name split the
+ * same species into two rows (and double-counted richness). Stripping
+ * authorship merges them. The checklist already groups this way via
+ * `splitNameAuthorship`; this keeps every other query consistent.
+ */
+function speciesKey(o: StoredOccurrence): string {
+  return cleanScientificName(o.taxonScientificName);
+}
+
 function syntheticId(o: StoredOccurrence): number {
   // Stable numeric id from "source:sourceRecordId" for React keys. Not used
   // for any business logic.
@@ -84,7 +96,7 @@ export function getViewSummary(slug: string, researchOnly: boolean): ViewSummary
   let inat = 0;
   let gbif = 0;
   for (const o of occ) {
-    species.add(o.taxonScientificName);
+    species.add(speciesKey(o));
     if (o.source === "inat") inat++;
     else gbif++;
   }
@@ -122,10 +134,11 @@ export function getSpeciesList(
   };
   const buckets = new Map<string, Bucket>();
   for (const o of occ) {
-    let b = buckets.get(o.taxonScientificName);
+    const name = speciesKey(o);
+    let b = buckets.get(name);
     if (!b) {
       b = {
-        scientificName: o.taxonScientificName,
+        scientificName: name,
         commonName: null,
         count: 0,
         inatCount: 0,
@@ -133,7 +146,7 @@ export function getSpeciesList(
         photo: null,
         photoDate: null,
       };
-      buckets.set(o.taxonScientificName, b);
+      buckets.set(name, b);
     }
     b.count++;
     if (o.source === "inat") b.inatCount++;
@@ -148,7 +161,16 @@ export function getSpeciesList(
     }
   }
   const all = Array.from(buckets.values()).sort((a, b) => b.count - a.count);
+  // taxonPhotos is keyed by the raw stored name (with GBIF authorship), but
+  // buckets are keyed by the clean binomial — re-index by clean name so the
+  // fallback still resolves for GBIF-only species.
   const taxonPhotos = view.taxonPhotos ?? {};
+  const photoByCleanName = new Map<string, string>();
+  for (const [rawName, url] of Object.entries(taxonPhotos)) {
+    if (!url) continue;
+    const clean = cleanScientificName(rawName);
+    if (!photoByCleanName.has(clean)) photoByCleanName.set(clean, url);
+  }
   return all.slice(offset, offset + limit).map((b) => ({
     scientificName: b.scientificName,
     commonName: b.commonName,
@@ -158,7 +180,7 @@ export function getSpeciesList(
     // Prefer an actual iNat observation photo; fall back to the iNat
     // taxon's curated photo (resolved at sync time) so GBIF-only species
     // still have a thumbnail.
-    representativePhoto: b.photo ?? taxonPhotos[b.scientificName] ?? null,
+    representativePhoto: b.photo ?? photoByCleanName.get(b.scientificName) ?? null,
   }));
 }
 
@@ -184,7 +206,7 @@ export function getPhenology(
   const occ = filteredOccurrences(view, researchOnly);
   const counts = new Map<number, number>();
   for (const o of occ) {
-    if (scientificName && o.taxonScientificName !== scientificName) continue;
+    if (scientificName && speciesKey(o) !== scientificName) continue;
     if (!o.observedMonth) continue;
     counts.set(o.observedMonth, (counts.get(o.observedMonth) ?? 0) + 1);
   }
@@ -204,7 +226,7 @@ export function getSpeciesPhotos(
     .filter(
       (o) =>
         o.source === "inat" &&
-        o.taxonScientificName === scientificName &&
+        speciesKey(o) === scientificName &&
         o.photoUrl &&
         o.license
     )
@@ -218,7 +240,8 @@ export function getAbundanceForAccumulation(slug: string, researchOnly: boolean)
   const occ = filteredOccurrences(view, researchOnly);
   const counts = new Map<string, number>();
   for (const o of occ) {
-    counts.set(o.taxonScientificName, (counts.get(o.taxonScientificName) ?? 0) + 1);
+    const name = speciesKey(o);
+    counts.set(name, (counts.get(name) ?? 0) + 1);
   }
   return Array.from(counts.values());
 }
@@ -300,7 +323,7 @@ export function getTopContributors(
       buckets.set(key, b);
     }
     b.records++;
-    b.species.add(o.taxonScientificName);
+    b.species.add(speciesKey(o));
     b.displayCount.set(original, (b.displayCount.get(original) ?? 0) + 1);
     // Track the most-frequent casing as the display name.
     if ((b.displayCount.get(original) ?? 0) > (b.displayCount.get(b.displayName) ?? 0)) {
@@ -371,7 +394,7 @@ export function getTaxonomyBreakdown(
     b.records++;
     if (o.source === "inat") b.inat++;
     else b.gbif++;
-    b.species.add(o.taxonScientificName);
+    b.species.add(speciesKey(o));
   }
 
   const rows: TaxonomyRow[] = Array.from(buckets.values())

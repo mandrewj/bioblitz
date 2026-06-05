@@ -321,14 +321,20 @@ export async function syncView(slug: string, opts: SyncOptions = {}): Promise<Sy
     // re-pulls its whole IDDL dataset every run because GBIF keeps re-interpreting
     // it), so the counters churned on every sync — forcing a commit + Vercel
     // redeploy even when the stored occurrences were identical. Keeping them
-    // per-run makes stats stable across no-op syncs and gives the UI's
-    // gbifDroppedAsInat the true count for the latest run.
+    // per-run makes stats stable across no-op syncs.
+    //
+    // gbifDroppedAsInat is the exception: it's the only stat rendered in the UI
+    // ("GBIF dropped as iNat dup" card), and a meaningful value requires seeing
+    // the whole dataset — an incremental delta is usually 0, which is useless on
+    // screen. So we carry it forward from the prior sync and only recompute it on
+    // a --full run (when `prior` is null). Carry-forward (not `prior + thisRun`)
+    // avoids the re-fetch overcounting that plagued the cumulative counters.
     stats: {
       inatFetched,
       inatKept,
       gbifFetched,
       gbifKept,
-      gbifDroppedAsInat,
+      gbifDroppedAsInat: prior?.stats.gbifDroppedAsInat ?? gbifDroppedAsInat,
       outsidePolygon,
     },
     inatTaxonAncestry,
