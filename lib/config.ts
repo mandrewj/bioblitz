@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
+import { BASEMAP_KEYS, LEGACY_BASEMAP_ALIASES } from "./basemap";
 
 const isoDate = z
   .union([z.string(), z.date(), z.null()])
@@ -54,7 +55,12 @@ const viewSchema = z.object({
 
 export const dashboardConfigSchema = z.object({
   contactEmail: z.string().email("contactEmail must be a valid email"),
-  defaultBasemap: z.enum(["positron", "voyager", "dark"]).default("positron"),
+  defaultBasemap: z
+    .preprocess(
+      (v) => (typeof v === "string" ? (LEGACY_BASEMAP_ALIASES[v] ?? v) : v),
+      z.enum(BASEMAP_KEYS)
+    )
+    .default("light"),
   views: z.array(viewSchema).min(1, "config must define at least one view"),
 });
 

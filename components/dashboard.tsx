@@ -36,6 +36,15 @@ export function Dashboard({ slug, viewOptions, defaultBasemap, description }: Da
   const search = useSearchParams();
   const researchOnly = search.get("rg") === "1";
 
+  // When iframed (e.g. insectid.org/bioblitz on Wix), tell the host page
+  // which view is showing so it can mirror it in its own URL
+  // (?view=<slug>) — see docs/embedding-wix.md. Slugs are public, so "*".
+  React.useEffect(() => {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "bioblitz:view", slug }, "*");
+    }
+  }, [slug]);
+
   const toggleResearchOnly = (next: boolean) => {
     const params = new URLSearchParams(Array.from(search.entries()));
     if (next) params.set("rg", "1");

@@ -62,7 +62,7 @@ If data volume ever outgrows ~10 MB per view, revisit the choice. See
 | `lib/sync.ts` | Orchestrates fetch → Turf clip → dedup → merge with prior → write JSON. Incremental via `lastSyncedAt` cursor; `--full` forces refetch *and* skips loading the prior (so a schema bump doesn't trip the version check). |
 | `lib/queries.ts` | In-memory filters/aggregations over the JSON store. All sync — no async. Powers the 7 API routes. |
 | `lib/inext.ts` | iNEXT rarefaction. Hurlbert interpolation with Heck/Smith-van Belle analytical variance; Chao1 extrapolation to `2n` with delta-method variance and log-CI (Chao 2014 eq. 5 + eq. 10). Unit-tested. |
-| `lib/basemap.ts` | CARTO raster tile URL templates; no API key. |
+| `lib/basemap.ts` | Esri ArcGIS Online raster tile URLs (light/topo/satellite/dark); no API key. CARTO was dropped 2026-09 when it began requiring a key. Legacy `positron`/`voyager` config values are aliased. |
 | `components/map-view.tsx` | Leaflet — see "Map (Leaflet) gotchas" below. |
 | `components/dashboard.tsx` | Client wrapper, lays out the page. Uses TanStack Query against `/api/views/[slug]/*`. |
 | `components/species-panel.tsx` | Sticky right sidebar with paginated list + a `<Drawer>` rendered via portal (z-[1000]) for the species detail view. |
@@ -162,6 +162,10 @@ sets the CSP `frame-ancestors` header. Current allow-list:
 `'self'`, `https://insectid.org` + subdomains,
 `https://indianabugs.com` + subdomains, `https://*.vercel.app`,
 `http://localhost:*`. Edit and redeploy to add origins.
+
+Deep links through the Wix page (`insectid.org/bioblitz?view=<slug>`)
+use Velo page code on the Wix side plus a `bioblitz:view` postMessage
+from `components/dashboard.tsx`. See `docs/embedding-wix.md`.
 
 Sample embed (from any allow-listed page):
 

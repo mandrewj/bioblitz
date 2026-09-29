@@ -5,9 +5,9 @@
 # Contact email sent in the User-Agent header to iNat and GBIF. Required.
 contactEmail: you@example.com
 
-# Default basemap. One of: positron | voyager | dark.
-# All three are free CARTO raster tile sets — no API key required.
-defaultBasemap: positron
+# Default basemap. One of: light | topo | satellite | dark.
+# All are keyless Esri raster tile sets (see lib/basemap.ts).
+defaultBasemap: light
 
 # Each view is a (region, taxon) pair exposed at /<slug>. Data is synced
 # locally with `npm run sync` and committed to data/<slug>.json.

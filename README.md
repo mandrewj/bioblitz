@@ -38,7 +38,7 @@ Big Oaks NWR × Coleoptera.
   records are written to disk.
 - **Leaflet map** with hybrid cluster/spider-fy click behavior, AOI
   polygon outline, source-colored points (orange = iNat, green = GBIF),
-  React popups, basemap switcher (Light / Voyager / Dark).
+  React popups, basemap switcher (Light / Topo / Satellite / Dark).
 - **Species panel** as a sticky right sidebar with paginated list and a
   full drawer (rendered through a portal so it sits above the map),
   phenology bar chart, CC-licensed photos with full attribution, and
@@ -98,7 +98,7 @@ validated by Zod — a malformed file fails loudly naming the offending field.
 
 ```yaml
 contactEmail: you@example.com
-defaultBasemap: positron                       # positron | voyager | dark
+defaultBasemap: light                          # light | topo | satellite | dark
 views:
   - slug: eagle-creek-beetles
     displayName: "Eagle Creek Park — Beetles"
@@ -241,7 +241,7 @@ lib/
   store.ts                StoredView / StoredOccurrence shape; loader/writer
   inext.ts                Rarefaction / extrapolation (Chao 2014, analytical)
   queries.ts              In-memory filters/aggregations over the JSON store
-  basemap.ts              CARTO raster tile URLs
+  basemap.ts              Esri raster tile URLs (keyless)
 docs/features/            Design docs (all `shipped`)
 docs/adding-views.md      Step-by-step how-to for new (region, taxon) views
 scripts/

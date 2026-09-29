@@ -2,7 +2,7 @@
 # Copy to config/dashboard.config.yaml and adjust.
 
 contactEmail: you@example.com
-defaultBasemap: positron   # positron | voyager | dark
+defaultBasemap: light   # light | topo | satellite | dark
 
 views:
   - slug: eagle-creek-beetles

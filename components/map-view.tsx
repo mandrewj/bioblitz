@@ -4,12 +4,7 @@ import * as React from "react";
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, useMap } from "react-leaflet";
 import L, { type LatLngBoundsExpression, type LatLngTuple } from "leaflet";
 import "leaflet.markercluster";
-import {
-  basemapTileUrl,
-  BASEMAP_SUBDOMAINS,
-  BASEMAP_ATTRIBUTION,
-  type BasemapKey,
-} from "@/lib/basemap";
+import { basemap as basemapDef, BASEMAP_OPTIONS, type BasemapKey } from "@/lib/basemap";
 import type { OccurrenceFeature } from "@/lib/queries";
 import { Select } from "@/components/ui/primitives";
 
@@ -192,9 +187,9 @@ export default function MapView({
       >
         <TileLayer
           key={basemap}
-          url={basemapTileUrl(basemap)}
-          subdomains={BASEMAP_SUBDOMAINS}
-          attribution={BASEMAP_ATTRIBUTION}
+          url={basemapDef(basemap).url}
+          attribution={basemapDef(basemap).attribution}
+          maxNativeZoom={basemapDef(basemap).maxNativeZoom}
           maxZoom={19}
         />
         {region ? (
@@ -209,11 +204,7 @@ export default function MapView({
           aria-label="Basemap"
           value={basemap}
           onChange={(v) => setBasemap(v as BasemapKey)}
-          options={[
-            { value: "positron", label: "Light" },
-            { value: "voyager", label: "Voyager" },
-            { value: "dark", label: "Dark" },
-          ]}
+          options={BASEMAP_OPTIONS}
         />
       </div>
       <div className="absolute right-3 bottom-9 z-[400] flex flex-col gap-1 rounded-md border border-cream-300 bg-cream-50/95 px-2 py-1.5 text-xs shadow-leaf backdrop-blur">

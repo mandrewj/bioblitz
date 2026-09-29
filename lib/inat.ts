@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createLimiter } from "@/lib/rate-limit";
+import { fetchJsonWithRetry } from "@/lib/http";
 
 const BASE = "https://api.inaturalist.org/v1";
 
@@ -9,19 +10,12 @@ function userAgent(contactEmail: string) {
   return `bioblitz-biodiversity-dashboard/0.1 (${contactEmail})`;
 }
 
-async function inatFetch(url: string, contactEmail: string) {
-  await limiter();
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": userAgent(contactEmail),
-      Accept: "application/json",
-    },
+function inatFetch(url: string, contactEmail: string) {
+  return fetchJsonWithRetry(url, {
+    label: "iNat",
+    limiter,
+    headers: { "User-Agent": userAgent(contactEmail), Accept: "application/json" },
   });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`iNat ${res.status} ${url}: ${body.slice(0, 200)}`);
-  }
-  return res.json();
 }
 
 const taxonHitSchema = z.object({

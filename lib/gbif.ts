@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createLimiter } from "@/lib/rate-limit";
+import { fetchJsonWithRetry } from "@/lib/http";
 
 const BASE = "https://api.gbif.org/v1";
 
@@ -18,30 +19,12 @@ function userAgent(contactEmail: string) {
   return `bioblitz-biodiversity-dashboard/0.1 (${contactEmail})`;
 }
 
-async function gbifFetch(url: string, contactEmail: string) {
-  const backoffSeconds = [10, 30, 90];
-  for (let attempt = 0; ; attempt++) {
-    await limiter();
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent": userAgent(contactEmail),
-        Accept: "application/json",
-      },
-    });
-    if (res.ok) return res.json();
-
-    if (res.status === 429 && attempt < backoffSeconds.length) {
-      const retryAfter = Number(res.headers.get("retry-after"));
-      const waitSec = Number.isFinite(retryAfter) && retryAfter > 0
-        ? retryAfter
-        : backoffSeconds[attempt];
-      await new Promise((r) => setTimeout(r, waitSec * 1000));
-      continue;
-    }
-
-    const body = await res.text();
-    throw new Error(`GBIF ${res.status} ${url}: ${body.slice(0, 200)}`);
-  }
+function gbifFetch(url: string, contactEmail: string) {
+  return fetchJsonWithRetry(url, {
+    label: "GBIF",
+    limiter,
+    headers: { "User-Agent": userAgent(contactEmail), Accept: "application/json" },
+  });
 }
 
 const matchSchema = z
